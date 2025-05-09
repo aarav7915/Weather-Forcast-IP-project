@@ -1,10 +1,3 @@
-/**
- * @license MIT
- * @fileoverview All API related stuff like API key, API request, etc.
- * @copyright Sarvan Yaduvanshi 2024 All rights reserved
- * @author codewithsadee <sarvankumar620058@gmail.com>
- */
-
 'use strict';
 
 const api_key = "26d75d8ec86604665a627da0f3540a39";

@@ -1,10 +1,3 @@
-/**
- * @license MIT
- * @fileoverview Manage all routes
- * @copyright Sarvan Yaduvanshi 2024 All rights reserved
- * @author Sarvan Yaduvanshi <sarvankumar620058@gmail.com>
- */
-
 'use strict';
 
 import { updateWeather, error404 } from "./app.js";
