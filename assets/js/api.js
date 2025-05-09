@@ -15,10 +15,18 @@ const api_key = "26d75d8ec86604665a627da0f3540a39";
  * @param {Function} callback Callback function
  */
 export const fetchData = function (URL, callback) {
-    fetch(`${URL}&appid=${api_key}`)
-       .then(res => res.json())
-       .then(data => callback(data))
-       .catch(error => console.error("Error fetching data:", error)); // Add error handling
+    fetch(URL)
+        .then(res => {
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            return res.json();
+        })
+        .then(data => callback(data))
+        .catch(error => {
+            console.error("Error fetching data:", error);
+            callback({ cod: "error", message: error.message });
+        });
 };
 
 export const url = {
