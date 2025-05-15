@@ -1,3 +1,10 @@
+/**
+ * @license MIT
+ * @fileoverview All module functions
+ * @copyright Sarvan Yaduvanshi 2024 All rights reserved
+ * @author Sarvan Yaduvanshi <sarvankumar620058@gmail.com>
+ */
+
 'use strict';
 
 export const weekDayNames = [

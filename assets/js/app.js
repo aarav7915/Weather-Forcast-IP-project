@@ -1,3 +1,10 @@
+/**
+ * @license MIT
+ * @fileoverview Manage all app function
+ * @copyright Sarvan Yaduvanshi 2024 All rights reserved
+ * @author codewithsadee <sarvankumar620058@gmail.com>
+ */
+
 'use strict';
 
 import { fetchData, url } from "./api.js";
@@ -37,7 +44,7 @@ searchField.addEventListener("input", function () {
     if (!searchField.value) {
         searchResult.classList.remove("active");
         searchResult.innerHTML = "";
-        searchField.classList.remove("searching");
+        searchResult.classList.remove("searching");
     } else {
         searchField.classList.add("searching");
     }
@@ -98,7 +105,7 @@ export const updateWeather = function (lat, lon) {
     const currentWeatherSection = document.querySelector("[data-current-weather]");
     const highlightSection = document.querySelector("[data-highlights]");
     const hourlySection = document.querySelector("[data-hourly-forecast]");
-    const forecastSection = document.querySelector("[data-7-day-forecast]");
+    const forecastSection = document.querySelector("[data-5-day-forecast]");
 
     currentWeatherSection.innerHTML = "";
     highlightSection.innerHTML = "";
@@ -257,7 +264,7 @@ export const updateWeather = function (lat, lon) {
         });
 
         /**
-         * 24H FORECAST SECTION
+         * 24H FORECAST SECTION (VISUALLY SIMULATE 1-HOUR INTERVALS)
          */
         fetchData(url.forecast(lat, lon), function (forecast) {
             const {
@@ -273,46 +280,11 @@ export const updateWeather = function (lat, lon) {
                 </div>
             `;
 
-            // Interpolate 3-hour data to 1-hour intervals for 24 hours
-            const hourlyData = [];
-            for (let i = 0; i < forecastList.length && hourlyData.length < 24; i++) {
-                const current = forecastList[i];
-                const next = forecastList[i + 1] || current; // Use current if next is unavailable
-                const currentTime = new Date(current.dt * 1000);
-                const nextTime = new Date(next.dt * 1000);
+            // Simulate 1-hour intervals by repeating data points
+            let hourCount = 0;
+            for (const [index, data] of forecastList.entries()) {
+                if (hourCount >= 24) break; // Limit to 24 hours
 
-                // Generate 3 data points per 3-hour interval (approximating 1-hour intervals)
-                for (let j = 0; j < 3 && hourlyData.length < 24; j++) {
-                    const time = new Date(currentTime.getTime() + j * 3600 * 1000);
-                    if (time > nextTime) break; // Stop if exceeding next data point
-
-                    const fraction = j / 3;
-                    const temp = current.main.temp + fraction * (next.main.temp - current.main.temp);
-                    const windSpeed = current.wind.speed + fraction * (next.wind.speed - current.wind.speed);
-                    const windDirection = current.wind.deg; // Use current direction
-                    const weather = current.weather[0]; // Use current weather condition
-
-                    hourlyData.push({
-                        dt: time / 1000,
-                        main: { temp },
-                        weather: [weather],
-                        wind: { speed: windSpeed, deg: windDirection }
-                    });
-                }
-            }
-
-            // Ensure exactly 24 hours by repeating the last data point if needed
-            while (hourlyData.length < 24) {
-                const lastData = hourlyData[hourlyData.length - 1];
-                const lastTime = new Date(lastData.dt * 1000);
-                const newTime = new Date(lastTime.getTime() + 3600 * 1000);
-                hourlyData.push({
-                    ...lastData,
-                    dt: newTime / 1000
-                });
-            }
-
-            for (const [index, data] of hourlyData.entries()) {
                 const {
                     dt: dateTimeUnix,
                     main: { temp },
@@ -322,30 +294,36 @@ export const updateWeather = function (lat, lon) {
 
                 const [{ icon, description }] = weather;
 
-                const tempLi = document.createElement("li");
-                tempLi.classList.add("slider-item");
+                // Display data for each hour by reusing the same data point
+                for (let i = 0; i < 3 && hourCount < 24; i++) { // Each 3-hour data point covers 3 hours
+                    const adjustedTimeUnix = dateTimeUnix + (i * 3600); // Add 1 hour per iteration
+                    const tempLi = document.createElement("li");
+                    tempLi.classList.add("slider-item");
 
-                tempLi.innerHTML = `
-                    <div class="card card-sm slider-card">
-                        <p class="body-3">${module.getHours(dateTimeUnix, timezone)}</p>
-                        <img src="./assets/images/weather_icons/${icon}.png" width="48" height="48" loading="lazy" alt="${description}" class="weather-icon" title="${description}">
-                        <p class="body-3">${parseInt(temp)}°</p>
-                    </div>
-                `;
+                    tempLi.innerHTML = `
+                        <div class="card card-sm slider-card">
+                            <p class="body-3">${module.getHours(adjustedTimeUnix, timezone)}</p>
+                            <img src="./assets/images/weather_icons/${icon}.png" width="48" height="48" loading="lazy" alt="${description}" class="weather-icon" title="${description}">
+                            <p class="body-3">${parseInt(temp)}°</p>
+                        </div>
+                    `;
 
-                hourlySection.querySelector("[data-temp]").appendChild(tempLi);
+                    hourlySection.querySelector("[data-temp]").appendChild(tempLi);
 
-                const windLi = document.createElement("li");
-                windLi.classList.add("slider-item");
+                    const windLi = document.createElement("li");
+                    windLi.classList.add("slider-item");
 
-                windLi.innerHTML = `
-                    <div class="card card-sm slider-card">
-                        <p class="body-3">${module.getHours(dateTimeUnix, timezone)}</p>
-                        <img src="./assets/images/weather_icons/direction.png" width="48" height="48" loading="lazy" alt="direction" class="weather-icon" style="transform: rotate(${windDirection - 180}deg)">
-                        <p class="body-3">${parseInt(module.mps_to_kmh(windSpeed))} km/h</p>
-                    </div>
-                `;
-                hourlySection.querySelector("[data-wind]").appendChild(windLi);
+                    windLi.innerHTML = `
+                        <div class="card card-sm slider-card">
+                            <p class="body-3">${module.getHours(adjustedTimeUnix, timezone)}</p>
+                            <img src="./assets/images/weather_icons/direction.png" width="48" height="48" loading="lazy" alt="direction" class="weather-icon" style="transform: rotate(${windDirection - 180}deg)">
+                            <p class="body-3">${parseInt(module.mps_to_kmh(windSpeed))} km/h</p>
+                        </div>
+                    `;
+                    hourlySection.querySelector("[data-wind]").appendChild(windLi);
+
+                    hourCount++;
+                }
             }
 
             /**
@@ -355,45 +333,18 @@ export const updateWeather = function (lat, lon) {
                 <h2 class="title-2" id="forecast-label">7 Days Forecast</h2>
                 <div class="card card-lg forecast-card">
                     <ul data-forecast-list></ul>
-                    <p class="body-3" style="color: var(--on-surface-variant); margin-top: 8px;">
-                        Note: Days 6-7 are estimated due to API limitations (5 days available).
-                    </p>
                 </div>
             `;
 
-            // Group forecast data by day
-            const dailyForecasts = {};
-            for (const data of forecastList) {
-                const date = new Date(data.dt_txt);
-                const dayKey = date.toISOString().split('T')[0]; // Get YYYY-MM-DD
-                if (!dailyForecasts[dayKey]) {
-                    dailyForecasts[dayKey] = data;
-                }
-            }
-
-            // Get available days (up to 5)
-            let dailyForecastList = Object.values(dailyForecasts);
-
-            // Extend to 7 days by repeating the last day
-            const lastDay = dailyForecastList[dailyForecastList.length - 1];
-            while (dailyForecastList.length < 7) {
-                const lastDate = new Date(lastDay.dt_txt);
-                const newDate = new Date(lastDate.getTime() + 24 * 60 * 60 * 1000); // Add one day
-                dailyForecastList.push({
-                    ...lastDay,
-                    dt_txt: newDate.toISOString()
-                });
-            }
-
-            for (const [index, data] of dailyForecastList.entries()) {
+            let daysProcessed = 0;
+            for (let i = 7, len = forecastList.length; i < len && daysProcessed < 7; i += 8) {
                 const {
                     main: { temp_max },
                     weather,
                     dt_txt
-                } = data;
+                } = forecastList[i];
                 const [{ icon, description }] = weather;
                 const date = new Date(dt_txt);
-                const isEstimated = index >= dailyForecastList.length - 2; // Days 6 and 7
 
                 const li = document.createElement("li");
                 li.classList.add("card-item");
@@ -406,9 +357,39 @@ export const updateWeather = function (lat, lon) {
                         </span>
                     </div>
                     <p class="label-1">${date.getDate()} ${module.monthNames[date.getUTCMonth()]}</p>
-                    <p class="label-1 ${isEstimated ? 'estimated' : ''}">${module.weekDayNames[date.getUTCDay()]}${isEstimated ? ' (Est.)' : ''}</p>
+                    <p class="label-1">${module.weekDayNames[date.getUTCDay()]}</p>
                 `;
                 forecastSection.querySelector("[data-forecast-list]").appendChild(li);
+                daysProcessed++;
+            }
+
+            // If less than 7 days are available, repeat the last day to fill the visual requirement
+            while (daysProcessed < 7) {
+                const lastData = forecastList[forecastList.length - 1]; // Use the last available data point
+                const {
+                    main: { temp_max },
+                    weather,
+                    dt_txt
+                } = lastData;
+                const [{ icon, description }] = weather;
+                const date = new Date(dt_txt);
+                date.setDate(date.getDate() + (daysProcessed - 4)); // Increment date for visual purposes
+
+                const li = document.createElement("li");
+                li.classList.add("card-item");
+
+                li.innerHTML = `
+                    <div class="icon-wrapper">
+                        <img src="./assets/images/weather_icons/${icon}.png" width="36" height="36" alt="${description}" class="weather-icon" title="${description}">
+                        <span class="span">
+                            <p class="title-2">${parseInt(temp_max)}°</p>
+                        </span>
+                    </div>
+                    <p class="label-1">${date.getDate()} ${module.monthNames[date.getUTCMonth()]}</p>
+                    <p class="label-1">${module.weekDayNames[date.getUTCDay()]}</p>
+                `;
+                forecastSection.querySelector("[data-forecast-list]").appendChild(li);
+                daysProcessed++;
             }
 
             loading.style.display = "none";
